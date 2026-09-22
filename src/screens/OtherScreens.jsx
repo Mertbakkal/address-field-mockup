@@ -58,9 +58,9 @@ export function RecordsScreen() {
             >
               <div
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
                   background: s.bg,
                   color: s.color,
                   display: 'grid',
@@ -72,16 +72,16 @@ export function RecordsScreen() {
                 {s.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{r.title}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{r.title}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                   {r.statusLabel} • {r.meta}
                 </div>
               </div>
               <div
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
                   background: 'var(--primary-soft)',
                   color: 'var(--primary-dark)',
                   display: 'grid',
@@ -110,7 +110,7 @@ export function ProfileScreen({ onSignOut }) {
           style={{
             background: 'linear-gradient(145deg, var(--primary-mid), var(--primary-dark))',
             borderRadius: 18,
-            padding: '24px 16px',
+            padding: '16px 12px',
             textAlign: 'center',
             color: '#fff',
             boxShadow: 'var(--shadow)',
@@ -118,22 +118,22 @@ export function ProfileScreen({ onSignOut }) {
         >
           <div
             style={{
-              width: 64,
-              height: 64,
+              width: 52,
+              height: 52,
               borderRadius: '50%',
               background: '#fff',
               color: 'var(--primary-dark)',
               display: 'grid',
               placeItems: 'center',
-              margin: '0 auto 12px',
+              margin: '0 auto 8px',
               fontWeight: 800,
-              fontSize: 22,
+              fontSize: 18,
             }}
           >
             FU
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Field User 0123</div>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>Authorized field personnel</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Field User 0123</div>
+          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>Authorized field personnel</div>
         </div>
 
         <div className="card">
@@ -168,6 +168,11 @@ export function ProfileScreen({ onSignOut }) {
 
 export function TasksScreen() {
   const [tab, setTab] = useState('available');
+  const [taskList, setTaskList] = useState(tasks);
+
+  const removeTask = (id) => {
+    setTaskList((list) => list.filter((t) => t.id !== id));
+  };
 
   return (
     <div className="screen-body" style={{ overflow: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
@@ -192,27 +197,47 @@ export function TasksScreen() {
           </button>
         </div>
         {tab === 'available' ? (
-          tasks.map((t) => (
-            <div key={t.id} className="card" style={{ borderColor: 'var(--primary-muted)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 10 }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Task ID {t.id}</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, marginTop: 2 }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-                    {t.user} · {t.date}
+          taskList.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', color: 'var(--muted)', padding: 28 }}>
+              No available tasks
+            </div>
+          ) : (
+            taskList.map((t) => (
+              <div key={t.id} className="card" style={{ borderColor: 'var(--primary-muted)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 8 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Task ID {t.id}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginTop: 2 }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                      {t.user} · {t.date}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      className="map-fab"
+                      style={{ width: 28, height: 28 }}
+                      aria-label="Sync task"
+                    >
+                      ↻
+                    </button>
+                    <button
+                      type="button"
+                      className="task-delete-btn"
+                      onClick={() => removeTask(t.id)}
+                      aria-label="Delete task"
+                      title="Delete"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="map-fab"
-                  style={{ width: 36, height: 36, flexShrink: 0 }}
-                  aria-label="Sync task"
-                >
-                  ↻
-                </button>
               </div>
-            </div>
-          ))
+            ))
+          )
         ) : (
           <div className="card" style={{ textAlign: 'center', color: 'var(--muted)', padding: 28 }}>
             No downloaded tasks yet
@@ -317,11 +342,11 @@ function Row({ label, value, last }) {
 }
 
 const selectStyle = {
-  minHeight: 44,
-  borderRadius: 12,
+  minHeight: 34,
+  borderRadius: 10,
   border: '1px solid var(--border)',
-  padding: '0 10px',
+  padding: '0 8px',
   background: '#fff',
-  fontSize: 13,
+  fontSize: 12,
   fontWeight: 600,
 };

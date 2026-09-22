@@ -19,13 +19,14 @@ export default function MainMapScreen({
 }) {
   const mapRef = useRef(null);
   const [sheet, setSheet] = useState(null);
+  const [layerTab, setLayerTab] = useState('layers');
   const [pendingPoint, setPendingPoint] = useState(null);
   const [center, setCenter] = useState([NOUAKCHOTT.lat, NOUAKCHOTT.lng]);
   const [searchTerm, setSearchTerm] = useState('NO31');
   const [basemap, setBasemap] = useState('osm');
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const markers = layers.addressPoints ? defaultMarkers : [];
+  const markers = (layers.address || layers.addressPoints) ? defaultMarkers : [];
 
   const zoomBy = (delta) => {
     const map = mapRef.current;
@@ -61,60 +62,55 @@ export default function MainMapScreen({
           onZoomOut={() => zoomBy(-1)}
           onLocate={locate}
           onInfo={() => setInfoOpen(true)}
-          onLayers={() => setSheet('layers')}
+          onLayers={() => {
+            setLayerTab('layers');
+            setSheet('layers');
+          }}
           onSearch={() => setSheet('search')}
           onTasks={onOpenTasks}
           onForm={onOpenForm}
+          layersActive={sheet === 'layers'}
         />
 
-        <div
-          style={{
-            position: 'absolute',
-            left: 12,
-            right: 12,
-            bottom: 16,
-            zIndex: 500,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
-          <div
-            className="card"
-            style={{
-              padding: '10px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: 'var(--shadow)',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-dark)' }}>
-                GPS 3.4 m
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                Tevragh Zeina, Nouakchott · Online
-              </div>
-            </div>
+        {!sheet && (
+          <div className="map-footer-bar">
             <div
+              className="card"
               style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: 'var(--primary-mid)',
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: 'var(--shadow)',
               }}
-            />
+            >
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary-dark)' }}>
+                  GPS 3.4 m
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  Tevragh Zeina, Nouakchott · Online
+                </div>
+              </div>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: 'var(--primary-mid)',
+                }}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: '100%', boxShadow: 'var(--shadow)' }}
+              onClick={() => setSheet('actions')}
+            >
+              + Address actions
+            </button>
           </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: '100%', boxShadow: 'var(--shadow)' }}
-            onClick={() => setSheet('actions')}
-          >
-            + Address actions
-          </button>
-        </div>
+        )}
 
         {sheet && (
           <>
@@ -127,12 +123,12 @@ export default function MainMapScreen({
                     ×
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                <div className="address-actions-grid">
                   <ActionTile
                     label="Add address"
                     onClick={placeAddress}
                     icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 5v14M5 12h14" />
                       </svg>
                     }
@@ -144,7 +140,7 @@ export default function MainMapScreen({
                       onStartAddress([NOUAKCHOTT.lat, NOUAKCHOTT.lng]);
                     }}
                     icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                       </svg>
                     }
@@ -153,7 +149,7 @@ export default function MainMapScreen({
                     label="Move address"
                     onClick={() => setSheet(null)}
                     icon={
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
                     }
@@ -162,57 +158,92 @@ export default function MainMapScreen({
               </div>
             )}
             {sheet === 'layers' && (
-              <div className="bottom-sheet">
+              <div className="bottom-sheet tall layer-mgmt">
                 <div className="sheet-head">
-                  <h2>Layer manager</h2>
-                  <button type="button" className="sheet-close" onClick={() => setSheet(null)}>
+                  <div className="layer-mgmt__title">
+                    <span className="layer-mgmt__icon" aria-hidden>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2 2 7l10 5 10-5-10-5Z" />
+                        <path d="m2 12 10 5 10-5M2 17l10 5 10-5" />
+                      </svg>
+                    </span>
+                    <h2>Layer Management</h2>
+                  </div>
+                  <button type="button" className="sheet-close" onClick={() => setSheet(null)} aria-label="Close">
                     ×
                   </button>
                 </div>
-                <LayerRow
-                  title="Address points"
-                  desc="Digital and physical addresses"
-                  on={layers.addressPoints}
-                  onToggle={() => setLayers((l) => ({ ...l, addressPoints: !l.addressPoints }))}
-                />
-                <LayerRow
-                  title="Field zone"
-                  desc="Authorized collection area"
-                  on={layers.fieldZone}
-                  onToggle={() => setLayers((l) => ({ ...l, fieldZone: !l.fieldZone }))}
-                />
-                <LayerRow
-                  title="OpenStreetMap"
-                  desc="Nouakchott basemap"
-                  on={layers.osm}
-                  onToggle={() => {
-                    setLayers((l) => ({ ...l, osm: !l.osm }));
-                    setBasemap('osm');
-                  }}
-                />
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 8 }}>
-                    BASE MAPS
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBasemap('osm');
-                      setLayers((l) => ({ ...l, osm: true }));
-                    }}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '12px 14px',
-                      borderRadius: 12,
-                      border: basemap === 'osm' ? '2px solid var(--primary-mid)' : '1px solid var(--border)',
-                      background: basemap === 'osm' ? 'var(--primary-soft)' : '#fff',
-                      fontWeight: 600,
-                    }}
-                  >
-                    OpenStreetMap (default)
-                  </button>
+
+                <div className="layer-mgmt__tabs">
+                  {['layers', 'task', 'personal'].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`layer-mgmt__tab ${layerTab === t ? 'active' : ''}`}
+                      onClick={() => setLayerTab(t)}
+                    >
+                      {t === 'layers' ? 'Layers' : t === 'task' ? 'Task Layers' : 'Personal Layers'}
+                    </button>
+                  ))}
                 </div>
+
+                {layerTab === 'layers' && (
+                  <div className="layer-mgmt__list">
+                    <MgmtLayerRow
+                      title="Integrations"
+                      on={layers.integrations}
+                      onToggle={() => setLayers((l) => ({ ...l, integrations: !l.integrations }))}
+                    />
+                    <MgmtLayerRow
+                      title="Training"
+                      on={layers.training}
+                      onToggle={() => setLayers((l) => ({ ...l, training: !l.training }))}
+                    />
+                    <MgmtLayerRow
+                      title="Reference"
+                      on={layers.reference}
+                      onToggle={() => setLayers((l) => ({ ...l, reference: !l.reference }))}
+                    />
+                    <MgmtLayerRow
+                      title="Electricity"
+                      on={layers.electricity}
+                      onToggle={() => setLayers((l) => ({ ...l, electricity: !l.electricity }))}
+                    />
+                    <MgmtLayerRow
+                      title="Address"
+                      on={layers.address}
+                      onToggle={() => {
+                        setLayers((l) => ({
+                          ...l,
+                          address: !l.address,
+                          addressPoints: !l.address,
+                        }));
+                      }}
+                    />
+                  </div>
+                )}
+
+                {layerTab === 'task' && (
+                  <div className="layer-mgmt__empty">No task layers assigned</div>
+                )}
+
+                {layerTab === 'personal' && (
+                  <div className="layer-mgmt__list">
+                    <MgmtLayerRow
+                      title="Field zone"
+                      on={layers.fieldZone}
+                      onToggle={() => setLayers((l) => ({ ...l, fieldZone: !l.fieldZone }))}
+                    />
+                    <MgmtLayerRow
+                      title="OpenStreetMap"
+                      on={layers.osm}
+                      onToggle={() => {
+                        setLayers((l) => ({ ...l, osm: !l.osm }));
+                        setBasemap('osm');
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             )}
             {sheet === 'search' && (
@@ -308,27 +339,27 @@ function ActionTile({ label, icon, onClick }) {
       onClick={onClick}
       style={{
         border: '1px solid var(--border)',
-        borderRadius: 14,
-        padding: '14px 6px',
+        borderRadius: 12,
+        padding: '12px 4px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
         background: '#fff',
         color: 'var(--primary-dark)',
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: 600,
         minWidth: 0,
         width: '100%',
         textAlign: 'center',
-        lineHeight: 1.25,
+        lineHeight: 1.2,
       }}
     >
       <span
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
+          width: 30,
+          height: 30,
+          borderRadius: 9,
           background: 'var(--primary-soft)',
           display: 'grid',
           placeItems: 'center',
@@ -342,28 +373,20 @@ function ActionTile({ label, icon, onClick }) {
   );
 }
 
-function LayerRow({ title, desc, on, onToggle }) {
+function MgmtLayerRow({ title, on, onToggle }) {
   return (
-    <div className="toggle-row">
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: 'var(--primary-soft)',
-          display: 'grid',
-          placeItems: 'center',
-          color: 'var(--primary-dark)',
-          flexShrink: 0,
-        }}
-      >
-        ◆
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14 }}>{title}</div>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{desc}</div>
-      </div>
-      <button type="button" className={`toggle ${on ? 'on' : ''}`} onClick={onToggle} aria-label={title} />
+    <div className="layer-mgmt__row">
+      <button type="button" className="layer-mgmt__expand" aria-label={`Expand ${title}`}>
+        ›
+      </button>
+      <span className="layer-mgmt__name">{title}</span>
+      <button
+        type="button"
+        className={`toggle ${on ? 'on' : ''}`}
+        onClick={onToggle}
+        aria-label={title}
+        aria-pressed={on}
+      />
     </div>
   );
 }

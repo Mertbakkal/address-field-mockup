@@ -20,6 +20,11 @@ export default function App() {
     addressPoints: true,
     fieldZone: true,
     osm: true,
+    integrations: false,
+    training: false,
+    reference: false,
+    electricity: true,
+    address: true,
   });
   const [toast, setToast] = useState('');
 

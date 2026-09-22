@@ -73,7 +73,17 @@ export default function LeafletMap({
   );
 }
 
-export function MapTools({ onZoomIn, onZoomOut, onLocate, onInfo, onLayers, onSearch, onTasks, onForm }) {
+export function MapTools({
+  onZoomIn,
+  onZoomOut,
+  onLocate,
+  onInfo,
+  onLayers,
+  onSearch,
+  onTasks,
+  onForm,
+  layersActive,
+}) {
   return (
     <>
       <div
@@ -85,9 +95,16 @@ export function MapTools({ onZoomIn, onZoomOut, onLocate, onInfo, onLayers, onSe
           display: 'flex',
           flexDirection: 'column',
           gap: 8,
+          pointerEvents: 'auto',
         }}
       >
-        <button type="button" className="map-fab" onClick={onLayers} aria-label="Layers">
+        <button
+          type="button"
+          className={`map-fab ${layersActive ? 'map-fab--active' : ''}`}
+          onClick={onLayers}
+          aria-label="Layer Management"
+          title="Layer Management"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2 2 7l10 5 10-5-10-5Z" />
             <path d="m2 12 10 5 10-5M2 17l10 5 10-5" />
@@ -136,10 +153,10 @@ export function MapTools({ onZoomIn, onZoomOut, onLocate, onInfo, onLayers, onSe
           </svg>
         </button>
         <button type="button" className="map-fab" onClick={onZoomIn} aria-label="Zoom in">
-          <strong style={{ fontSize: 20, lineHeight: 1 }}>+</strong>
+          <strong style={{ fontSize: 14, lineHeight: 1 }}>+</strong>
         </button>
         <button type="button" className="map-fab" onClick={onZoomOut} aria-label="Zoom out">
-          <strong style={{ fontSize: 22, lineHeight: 1 }}>−</strong>
+          <strong style={{ fontSize: 15, lineHeight: 1 }}>−</strong>
         </button>
       </div>
     </>
