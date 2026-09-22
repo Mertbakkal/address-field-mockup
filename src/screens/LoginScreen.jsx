@@ -69,6 +69,21 @@ export default function LoginScreen({ onLogin }) {
           <button type="button" className="btn btn-primary btn-block" onClick={onLogin}>
             Sign in
           </button>
+          <button type="button" className="login-detection-btn" tabIndex={-1} aria-disabled="true">
+            <svg className="login-detection-btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M7 3.5h7.2L19 8.3V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1-1.5Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+              <path d="M14 3.5V8h4.8" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+              <path d="M9 11h5.5M9 14h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <circle cx="15.2" cy="16.8" r="2.4" stroke="currentColor" strokeWidth="1.7" />
+              <path d="m17 18.6 1.6 1.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <span>ADDRESS DETECTION</span>
+          </button>
         </div>
         <p className="login-foot">Restricted application • Authorized field personnel only</p>
       </div>
