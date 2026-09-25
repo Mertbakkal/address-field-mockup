@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ScreenHeader } from '../components/chrome';
+import { LanguageSelect } from '../components/LanguageSelect';
 import { initialRecords, tasks } from '../data/mockData';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const statusStyle = {
   ready: { bg: '#e8f2fb', icon: '◆', color: '#0b6bcb' },
@@ -9,7 +11,21 @@ const statusStyle = {
   sent: { bg: '#e3f5ea', icon: '✓', color: '#1b7a45' },
 };
 
+const statusLabelKey = {
+  ready: 'statusReady',
+  draft: 'statusDraft',
+  error: 'statusError',
+  sent: 'statusSent',
+};
+
+const taskNameKey = {
+  699: 'taskTransformer',
+  698: 'taskAddress',
+  697: 'taskLine',
+};
+
 export function RecordsScreen() {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState('all');
   const [status, setStatus] = useState('all');
 
@@ -20,31 +36,39 @@ export function RecordsScreen() {
 
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="My Records" subtitle="Address records only" />
-      <div style={{ padding: '0 14px 12px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 8 }}>
+      <ScreenHeader title={t('myRecords')} subtitle={t('recordsSub')} />
+      <div
+        style={{
+          padding: '0 14px 12px',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)',
+          gap: 8,
+        }}
+      >
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           style={{ ...selectStyle, width: '100%', minWidth: 0 }}
         >
-          <option value="all">All records</option>
-          <option value="mine">My drafts</option>
+          <option value="all">{t('allRecords')}</option>
+          <option value="mine">{t('myDrafts')}</option>
         </select>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           style={{ ...selectStyle, width: '100%', minWidth: 0 }}
         >
-          <option value="all">All statuses</option>
-          <option value="ready">Ready</option>
-          <option value="draft">Draft</option>
-          <option value="error">Error</option>
-          <option value="sent">Sent</option>
+          <option value="all">{t('allStatuses')}</option>
+          <option value="ready">{t('ready')}</option>
+          <option value="draft">{t('draft')}</option>
+          <option value="error">{t('error')}</option>
+          <option value="sent">{t('sent')}</option>
         </select>
       </div>
       <div style={{ padding: '0 14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {list.map((r) => {
           const s = statusStyle[r.status];
+          const title = r.title.replace(/^Address/, t('recordTitle'));
           return (
             <div
               key={r.id}
@@ -72,9 +96,9 @@ export function RecordsScreen() {
                 {s.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{r.title}</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{title}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                  {r.statusLabel} • {r.meta}
+                  {t(statusLabelKey[r.status])} • {r.meta}
                 </div>
               </div>
               <div
@@ -100,11 +124,11 @@ export function RecordsScreen() {
 }
 
 export function ProfileScreen({ onSignOut }) {
-  const [lang, setLang] = useState('English');
+  const { t } = useLanguage();
 
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="Profile" subtitle="User & language" />
+      <ScreenHeader title={t('profile')} subtitle={t('profileSub')} />
       <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div
           style={{
@@ -132,34 +156,29 @@ export function ProfileScreen({ onSignOut }) {
           >
             FU
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Field User 0123</div>
-          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>Authorized field personnel</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>{t('fieldUser')}</div>
+          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 3 }}>{t('authorizedPersonnel')}</div>
         </div>
 
         <div className="card">
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>Account</div>
-          <Row label="Role" value="Field user" />
-          <Row label="Organization" value="Local authority" />
-          <Row label="Last login" value="Today 08:41" last />
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>{t('account')}</div>
+          <Row label={t('role')} value={t('roleValue')} />
+          <Row label={t('organization')} value={t('orgValue')} />
+          <Row label={t('lastLogin')} value={t('lastLoginValue')} last />
         </div>
 
         <div className="card">
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>Application</div>
-          <div className="field" style={{ marginBottom: 12 }}>
-            <label>Language</label>
-            <select value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option>English</option>
-              <option>Français</option>
-              <option>العربية</option>
-            </select>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>{t('application')}</div>
+          <div style={{ marginBottom: 12 }}>
+            <LanguageSelect />
           </div>
-          <Row label="Offline storage" value="284 MB" />
-          <Row label="GPS permission" value="Allowed" />
-          <Row label="Camera permission" value="Allowed" last />
+          <Row label={t('offlineStorage')} value="284 MB" />
+          <Row label={t('gpsPermission')} value={t('allowed')} />
+          <Row label={t('cameraPermission')} value={t('allowed')} last />
         </div>
 
         <button type="button" className="btn btn-danger-soft btn-block" onClick={onSignOut}>
-          Sign out
+          {t('signOut')}
         </button>
       </div>
     </div>
@@ -167,49 +186,64 @@ export function ProfileScreen({ onSignOut }) {
 }
 
 export function TasksScreen() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState('available');
   const [taskList, setTaskList] = useState(tasks);
 
   const removeTask = (id) => {
-    setTaskList((list) => list.filter((t) => t.id !== id));
+    setTaskList((list) => list.filter((item) => item.id !== id));
   };
 
   return (
-    <div className="screen-body" style={{ overflow: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-      <ScreenHeader title="Task Management" subtitle="Field workforces" />
+    <div
+      className="screen-body"
+      style={{ overflow: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}
+    >
+      <ScreenHeader title={t('taskManagement')} subtitle={t('tasksSub')} />
       <div className="seg-tabs">
-        {['downloaded', 'available'].map((t) => (
+        {['downloaded', 'available'].map((tabId) => (
           <button
-            key={t}
+            key={tabId}
             type="button"
-            className={`seg-tab ${tab === t ? 'active' : ''}`}
-            onClick={() => setTab(t)}
+            className={`seg-tab ${tab === tabId ? 'active' : ''}`}
+            onClick={() => setTab(tabId)}
           >
-            {t === 'downloaded' ? 'Downloaded' : 'Available'}
+            {tabId === 'downloaded' ? t('downloaded') : t('available')}
           </button>
         ))}
       </div>
       <div style={{ padding: '12px 14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="toolbar-row">
-          <input className="toolbar-input" placeholder="Search workforces..." />
+          <input className="toolbar-input" placeholder={t('searchWorkforces')} />
           <button type="button" className="btn btn-primary toolbar-action">
-            + New
+            {t('newTask')}
           </button>
         </div>
         {tab === 'available' ? (
           taskList.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', color: 'var(--muted)', padding: 28 }}>
-              No available tasks
+              {t('noAvailableTasks')}
             </div>
           ) : (
-            taskList.map((t) => (
-              <div key={t.id} className="card" style={{ borderColor: 'var(--primary-muted)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 8 }}>
+            taskList.map((item) => (
+              <div key={item.id} className="card" style={{ borderColor: 'var(--primary-muted)' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'start',
+                    gap: 8,
+                  }}
+                >
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>Task ID {t.id}</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, marginTop: 2 }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      {t('taskId')} {item.id}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginTop: 2 }}>
+                      {taskNameKey[item.id] ? t(taskNameKey[item.id]) : item.name}
+                    </div>
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-                      {t.user} · {t.date}
+                      {item.user} · {item.date}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -217,18 +251,25 @@ export function TasksScreen() {
                       type="button"
                       className="map-fab"
                       style={{ width: 28, height: 28 }}
-                      aria-label="Sync task"
+                      aria-label={t('syncTask')}
                     >
                       ↻
                     </button>
                     <button
                       type="button"
                       className="task-delete-btn"
-                      onClick={() => removeTask(t.id)}
-                      aria-label="Delete task"
-                      title="Delete"
+                      onClick={() => removeTask(item.id)}
+                      aria-label={t('deleteTask')}
+                      title={t('deleteTask')}
                     >
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="13"
+                        height="13"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                         <path d="M10 11v6M14 11v6" />
                       </svg>
@@ -240,7 +281,7 @@ export function TasksScreen() {
           )
         ) : (
           <div className="card" style={{ textAlign: 'center', color: 'var(--muted)', padding: 28 }}>
-            No downloaded tasks yet
+            {t('noDownloadedTasks')}
           </div>
         )}
       </div>
@@ -249,19 +290,21 @@ export function TasksScreen() {
 }
 
 export function FormScreen({ onClose, onContinue }) {
+  const { t } = useLanguage();
+
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="Feature Form" subtitle="Transformer building type" />
+      <ScreenHeader title={t('featureForm')} subtitle={t('formSub')} />
       <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)' }}>
-          <Tab active>Main Form</Tab>
-          <Tab>Surge Arrester</Tab>
+          <Tab active>{t('mainForm')}</Tab>
+          <Tab>{t('surgeArrester')}</Tab>
         </div>
         <div style={{ display: 'flex', gap: 0 }}>
           <Tab active small>
-            General Information
+            {t('generalInformation')}
           </Tab>
-          <Tab small>Other Information</Tab>
+          <Tab small>{t('otherInformation')}</Tab>
         </div>
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div
@@ -273,25 +316,25 @@ export function FormScreen({ onClose, onContinue }) {
               fontSize: 14,
             }}
           >
-            General Overview
+            {t('generalOverview')}
           </div>
           <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Field label="ID" value="982741942" />
-            <Field label="Integration ID" value="" placeholder="—" />
-            <Field label="Feature" value="KK" />
-            <Field label="Transformer type" value="Concrete kiosk" />
-            <Field label="Ownership" value="Private" />
-            <Field label="Operating voltage" value="33000" />
-            <Field label="Code" value="21TR-99954" />
-            <Field label="Name" value="TR-99986" />
+            <Field label={t('integrationId')} value="" placeholder="—" />
+            <Field label={t('feature')} value="KK" />
+            <Field label={t('transformerType')} value={t('concreteKiosk')} />
+            <Field label={t('ownership')} value={t('optPrivate')} />
+            <Field label={t('operatingVoltage')} value="33000" />
+            <Field label={t('code')} value="21TR-99954" />
+            <Field label={t('name')} value="TR-99986" />
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('close')}
           </button>
           <button type="button" className="btn btn-primary" onClick={onContinue}>
-            Save
+            {t('save')}
           </button>
         </div>
       </div>

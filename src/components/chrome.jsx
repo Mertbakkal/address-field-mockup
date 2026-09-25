@@ -1,3 +1,5 @@
+import { useLanguage } from '../i18n/LanguageContext';
+
 export function StatusBar() {
   return (
     <div className="status-bar">
@@ -24,11 +26,12 @@ export function StatusBar() {
 }
 
 export function BottomNav({ active, onChange }) {
+  const { t } = useLanguage();
   const items = [
-    { id: 'map', label: 'Map', icon: IconMap },
-    { id: 'records', label: 'Records', icon: IconList },
-    { id: 'tasks', label: 'Tasks', icon: IconSync },
-    { id: 'profile', label: 'Profile', icon: IconUser },
+    { id: 'map', label: t('navMap'), icon: IconMap },
+    { id: 'records', label: t('navRecords'), icon: IconList },
+    { id: 'tasks', label: t('navTasks'), icon: IconSync },
+    { id: 'profile', label: t('navProfile'), icon: IconUser },
   ];
 
   return (
@@ -52,13 +55,14 @@ export function BottomNav({ active, onChange }) {
 }
 
 export function ScreenHeader({ title, subtitle, onDot }) {
+  const { t } = useLanguage();
   return (
     <header className="screen-header">
       <div>
         <h1>{title}</h1>
         {subtitle ? <p>{subtitle}</p> : null}
       </div>
-      <button type="button" className="header-dot-btn" onClick={onDot} aria-label="Quick menu">
+      <button type="button" className="header-dot-btn" onClick={onDot} aria-label={t('quickMenu')}>
         <span />
       </button>
     </header>

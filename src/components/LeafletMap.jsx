@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect } from 'react';
 import { NOUAKCHOTT } from '../data/mockData';
+import { useLanguage } from '../i18n/LanguageContext';
 import 'leaflet/dist/leaflet.css';
 
 const redPin = L.divIcon({
@@ -84,6 +85,8 @@ export function MapTools({
   onForm,
   layersActive,
 }) {
+  const { t } = useLanguage();
+
   return (
     <>
       <div
@@ -102,27 +105,27 @@ export function MapTools({
           type="button"
           className={`map-fab ${layersActive ? 'map-fab--active' : ''}`}
           onClick={onLayers}
-          aria-label="Layer Management"
-          title="Layer Management"
+          aria-label={t('layerManagement')}
+          title={t('layerManagement')}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2 2 7l10 5 10-5-10-5Z" />
             <path d="m2 12 10 5 10-5M2 17l10 5 10-5" />
           </svg>
         </button>
-        <button type="button" className="map-fab" onClick={onForm} aria-label="Form">
+        <button type="button" className="map-fab" onClick={onForm} aria-label={t('form')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <path d="M14 2v6h6M8 13h8M8 17h6" />
           </svg>
         </button>
-        <button type="button" className="map-fab" onClick={onSearch} aria-label="Search">
+        <button type="button" className="map-fab" onClick={onSearch} aria-label={t('search')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3-3" />
           </svg>
         </button>
-        <button type="button" className="map-fab" onClick={onTasks} aria-label="Tasks">
+        <button type="button" className="map-fab" onClick={onTasks} aria-label={t('navTasks')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 11l3 3L22 4" />
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -140,22 +143,22 @@ export function MapTools({
           gap: 8,
         }}
       >
-        <button type="button" className="map-fab" onClick={onInfo} aria-label="Info">
+        <button type="button" className="map-fab" onClick={onInfo} aria-label={t('info')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 10v6M12 7h.01" />
           </svg>
         </button>
-        <button type="button" className="map-fab" onClick={onLocate} aria-label="My location">
+        <button type="button" className="map-fab" onClick={onLocate} aria-label={t('myLocation')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
           </svg>
         </button>
-        <button type="button" className="map-fab" onClick={onZoomIn} aria-label="Zoom in">
+        <button type="button" className="map-fab" onClick={onZoomIn} aria-label={t('zoomIn')}>
           <strong style={{ fontSize: 14, lineHeight: 1 }}>+</strong>
         </button>
-        <button type="button" className="map-fab" onClick={onZoomOut} aria-label="Zoom out">
+        <button type="button" className="map-fab" onClick={onZoomOut} aria-label={t('zoomOut')}>
           <strong style={{ fontSize: 15, lineHeight: 1 }}>−</strong>
         </button>
       </div>

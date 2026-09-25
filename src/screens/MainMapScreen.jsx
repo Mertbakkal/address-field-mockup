@@ -3,6 +3,7 @@ import LeafletMap, { MapTools } from '../components/LeafletMap';
 import { ScreenHeader } from '../components/chrome';
 import { NOUAKCHOTT } from '../data/mockData';
 import { searchResults } from '../data/mockData';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const defaultMarkers = [
   { id: 'm1', coords: [18.089, -15.975], type: 'pin' },
@@ -17,6 +18,7 @@ export default function MainMapScreen({
   layers,
   setLayers,
 }) {
+  const { t } = useLanguage();
   const mapRef = useRef(null);
   const [sheet, setSheet] = useState(null);
   const [layerTab, setLayerTab] = useState('layers');
@@ -26,7 +28,7 @@ export default function MainMapScreen({
   const [basemap, setBasemap] = useState('osm');
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const markers = (layers.address || layers.addressPoints) ? defaultMarkers : [];
+  const markers = layers.address || layers.addressPoints ? defaultMarkers : [];
 
   const zoomBy = (delta) => {
     const map = mapRef.current;
@@ -46,9 +48,15 @@ export default function MainMapScreen({
     onStartAddress(pt);
   };
 
+  const layerTabLabel = {
+    layers: t('layers'),
+    task: t('taskLayers'),
+    personal: t('personalLayers'),
+  };
+
   return (
     <div className="screen-body">
-      <ScreenHeader title="Main Map" subtitle="OSM • Nouakchott" />
+      <ScreenHeader title={t('mainMap')} subtitle={t('mainMapSub')} />
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
         <LeafletMap
           mapRef={mapRef}
@@ -86,11 +94,9 @@ export default function MainMapScreen({
             >
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary-dark)' }}>
-                  GPS 3.4 m
+                  {t('gpsAccuracy')}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  Tevragh Zeina, Nouakchott · Online
-                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{t('mapFooterLoc')}</div>
               </div>
               <div
                 style={{
@@ -107,7 +113,7 @@ export default function MainMapScreen({
               style={{ width: '100%', boxShadow: 'var(--shadow)' }}
               onClick={() => setSheet('actions')}
             >
-              + Address actions
+              + {t('addressActions')}
             </button>
           </div>
         )}
@@ -118,14 +124,14 @@ export default function MainMapScreen({
             {sheet === 'actions' && (
               <div className="bottom-sheet">
                 <div className="sheet-head">
-                  <h2>Address actions</h2>
+                  <h2>{t('addressActions')}</h2>
                   <button type="button" className="sheet-close" onClick={() => setSheet(null)}>
                     ×
                   </button>
                 </div>
                 <div className="address-actions-grid">
                   <ActionTile
-                    label="Add address"
+                    label={t('addAddress')}
                     onClick={placeAddress}
                     icon={
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -134,7 +140,7 @@ export default function MainMapScreen({
                     }
                   />
                   <ActionTile
-                    label="Edit address"
+                    label={t('editAddress')}
                     onClick={() => {
                       setSheet(null);
                       onStartAddress([NOUAKCHOTT.lat, NOUAKCHOTT.lng]);
@@ -146,7 +152,7 @@ export default function MainMapScreen({
                     }
                   />
                   <ActionTile
-                    label="Move address"
+                    label={t('moveAddress')}
                     onClick={() => setSheet(null)}
                     icon={
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -167,22 +173,27 @@ export default function MainMapScreen({
                         <path d="m2 12 10 5 10-5M2 17l10 5 10-5" />
                       </svg>
                     </span>
-                    <h2>Layer Management</h2>
+                    <h2>{t('layerManagement')}</h2>
                   </div>
-                  <button type="button" className="sheet-close" onClick={() => setSheet(null)} aria-label="Close">
+                  <button
+                    type="button"
+                    className="sheet-close"
+                    onClick={() => setSheet(null)}
+                    aria-label={t('close')}
+                  >
                     ×
                   </button>
                 </div>
 
                 <div className="layer-mgmt__tabs">
-                  {['layers', 'task', 'personal'].map((t) => (
+                  {['layers', 'task', 'personal'].map((tabId) => (
                     <button
-                      key={t}
+                      key={tabId}
                       type="button"
-                      className={`layer-mgmt__tab ${layerTab === t ? 'active' : ''}`}
-                      onClick={() => setLayerTab(t)}
+                      className={`layer-mgmt__tab ${layerTab === tabId ? 'active' : ''}`}
+                      onClick={() => setLayerTab(tabId)}
                     >
-                      {t === 'layers' ? 'Layers' : t === 'task' ? 'Task Layers' : 'Personal Layers'}
+                      {layerTabLabel[tabId]}
                     </button>
                   ))}
                 </div>
@@ -190,27 +201,27 @@ export default function MainMapScreen({
                 {layerTab === 'layers' && (
                   <div className="layer-mgmt__list">
                     <MgmtLayerRow
-                      title="Integrations"
+                      title={t('integrations')}
                       on={layers.integrations}
                       onToggle={() => setLayers((l) => ({ ...l, integrations: !l.integrations }))}
                     />
                     <MgmtLayerRow
-                      title="Training"
+                      title={t('training')}
                       on={layers.training}
                       onToggle={() => setLayers((l) => ({ ...l, training: !l.training }))}
                     />
                     <MgmtLayerRow
-                      title="Reference"
+                      title={t('reference')}
                       on={layers.reference}
                       onToggle={() => setLayers((l) => ({ ...l, reference: !l.reference }))}
                     />
                     <MgmtLayerRow
-                      title="Electricity"
+                      title={t('electricity')}
                       on={layers.electricity}
                       onToggle={() => setLayers((l) => ({ ...l, electricity: !l.electricity }))}
                     />
                     <MgmtLayerRow
-                      title="Address"
+                      title={t('address')}
                       on={layers.address}
                       onToggle={() => {
                         setLayers((l) => ({
@@ -223,19 +234,17 @@ export default function MainMapScreen({
                   </div>
                 )}
 
-                {layerTab === 'task' && (
-                  <div className="layer-mgmt__empty">No task layers assigned</div>
-                )}
+                {layerTab === 'task' && <div className="layer-mgmt__empty">{t('noTaskLayers')}</div>}
 
                 {layerTab === 'personal' && (
                   <div className="layer-mgmt__list">
                     <MgmtLayerRow
-                      title="Field zone"
+                      title={t('fieldZone')}
                       on={layers.fieldZone}
                       onToggle={() => setLayers((l) => ({ ...l, fieldZone: !l.fieldZone }))}
                     />
                     <MgmtLayerRow
-                      title="OpenStreetMap"
+                      title={t('openStreetMap')}
                       on={layers.osm}
                       onToggle={() => {
                         setLayers((l) => ({ ...l, osm: !l.osm }));
@@ -249,7 +258,7 @@ export default function MainMapScreen({
             {sheet === 'search' && (
               <div className="bottom-sheet tall">
                 <div className="sheet-head">
-                  <h2>Quick Search</h2>
+                  <h2>{t('quickSearch')}</h2>
                   <button type="button" className="sheet-close" onClick={() => setSheet(null)}>
                     ×
                   </button>
@@ -258,12 +267,12 @@ export default function MainMapScreen({
                   <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search term"
+                    placeholder={t('searchTerm')}
                     className="toolbar-input"
                     style={{ flex: 1 }}
                   />
                   <button type="button" className="btn btn-primary toolbar-action">
-                    Search
+                    {t('search')}
                   </button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -295,7 +304,7 @@ export default function MainMapScreen({
                           {r.source}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>Term values</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('termValues')}</div>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{r.term}</div>
                     </div>
                   ))}
@@ -310,19 +319,19 @@ export default function MainMapScreen({
             <div className="sheet-backdrop" onClick={() => setInfoOpen(false)} />
             <div className="bottom-sheet">
               <div className="sheet-head">
-                <h2>Map info</h2>
+                <h2>{t('mapInfo')}</h2>
                 <button type="button" className="sheet-close" onClick={() => setInfoOpen(false)}>
                   ×
                 </button>
               </div>
               <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>
-                Latitude: {NOUAKCHOTT.lat.toFixed(6)}
+                {t('latitude')}: {NOUAKCHOTT.lat.toFixed(6)}
                 <br />
-                Longitude: {NOUAKCHOTT.lng.toFixed(6)}
+                {t('longitude')}: {NOUAKCHOTT.lng.toFixed(6)}
                 <br />
-                Format: Decimal degrees
+                {t('format')}: {t('decimalDegrees')}
                 <br />
-                Basemap: OpenStreetMap
+                {t('basemap')}: OpenStreetMap
               </p>
             </div>
           </>

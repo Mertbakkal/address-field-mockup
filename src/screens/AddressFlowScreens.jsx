@@ -1,21 +1,46 @@
 import { useState } from 'react';
 import { ScreenHeader, Stepper } from '../components/chrome';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export function BuildingInfoScreen({ coords, onCancel, onNext }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
-    buildingType: 'Residential building',
-    occupation: 'Residential',
-    ownership: 'Private',
-    electricity: 'Yes',
-    water: 'Yes',
-    internet: 'Unknown',
+    buildingType: 'residential_building',
+    occupation: 'residential',
+    ownership: 'private',
+    electricity: 'yes',
+    water: 'yes',
+    internet: 'unknown',
   });
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const buildingOpts = [
+    { value: 'residential_building', label: t('optResidentialBuilding') },
+    { value: 'commercial', label: t('optCommercial') },
+    { value: 'mixed_use', label: t('optMixedUse') },
+    { value: 'public', label: t('optPublic') },
+  ];
+  const occupationOpts = [
+    { value: 'residential', label: t('optResidential') },
+    { value: 'commercial', label: t('optCommercial') },
+    { value: 'industrial', label: t('optIndustrial') },
+    { value: 'vacant', label: t('optVacant') },
+  ];
+  const ownershipOpts = [
+    { value: 'private', label: t('optPrivate') },
+    { value: 'public', label: t('optPublic') },
+    { value: 'communal', label: t('optCommunal') },
+  ];
+  const ynOpts = [
+    { value: 'yes', label: t('optYes') },
+    { value: 'no', label: t('optNo') },
+    { value: 'unknown', label: t('optUnknown') },
+  ];
+
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="Building Information" subtitle="Step 1 of 3" />
+      <ScreenHeader title={t('buildingInfo')} subtitle={t('stepOf', { n: 1 })} />
       <Stepper step={1} />
       <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div
@@ -28,20 +53,55 @@ export function BuildingInfoScreen({ coords, onCancel, onNext }) {
             color: 'var(--primary-dark)',
           }}
         >
-          GPS captured • {coords[0].toFixed(5)}, {coords[1].toFixed(5)} • Accuracy 3.4 m
+          {t('gpsCaptured', {
+            coords: `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
+          })}
         </div>
-        <SelectField label="Building type" required value={form.buildingType} onChange={set('buildingType')} options={['Residential building', 'Commercial', 'Mixed use', 'Public']} />
-        <SelectField label="Occupation type" required value={form.occupation} onChange={set('occupation')} options={['Residential', 'Commercial', 'Industrial', 'Vacant']} />
-        <SelectField label="Ownership" required value={form.ownership} onChange={set('ownership')} options={['Private', 'Public', 'Communal']} />
-        <SelectField label="Electricity connection" value={form.electricity} onChange={set('electricity')} options={['Yes', 'No', 'Unknown']} />
-        <SelectField label="Water connection" value={form.water} onChange={set('water')} options={['Yes', 'No', 'Unknown']} />
-        <SelectField label="Internet connection" value={form.internet} onChange={set('internet')} options={['Yes', 'No', 'Unknown']} />
+        <SelectField
+          label={t('buildingType')}
+          required
+          value={form.buildingType}
+          onChange={set('buildingType')}
+          options={buildingOpts}
+        />
+        <SelectField
+          label={t('occupationType')}
+          required
+          value={form.occupation}
+          onChange={set('occupation')}
+          options={occupationOpts}
+        />
+        <SelectField
+          label={t('ownership')}
+          required
+          value={form.ownership}
+          onChange={set('ownership')}
+          options={ownershipOpts}
+        />
+        <SelectField
+          label={t('electricityConnection')}
+          value={form.electricity}
+          onChange={set('electricity')}
+          options={ynOpts}
+        />
+        <SelectField
+          label={t('waterConnection')}
+          value={form.water}
+          onChange={set('water')}
+          options={ynOpts}
+        />
+        <SelectField
+          label={t('internetConnection')}
+          value={form.internet}
+          onChange={set('internet')}
+          options={ynOpts}
+        />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
-            Cancel
+            {t('cancel')}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => onNext(form)}>
-            Next
+            {t('next')}
           </button>
         </div>
       </div>
@@ -50,26 +110,27 @@ export function BuildingInfoScreen({ coords, onCancel, onNext }) {
 }
 
 export function AddressInfoScreen({ building, coords, onBack, onNext }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     digital: 'NO31-A42 102987',
     postal: 'NO31-A42',
     physicalExists: true,
-    physical: 'Tevragh Zeina, existing address reference 145',
-    name: 'Building 1842',
+    physical: t('physicalDefault'),
+    name: t('buildingNameDefault'),
     gps: `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
   });
 
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="Address Information" subtitle="Step 2 of 3" />
+      <ScreenHeader title={t('addressInfo')} subtitle={t('stepOf', { n: 2 })} />
       <Stepper step={2} />
       <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="field">
-          <label>Digital address</label>
+          <label>{t('digitalAddress')}</label>
           <input value={form.digital} onChange={(e) => setForm({ ...form, digital: e.target.value })} />
         </div>
         <div className="field">
-          <label>Postal code</label>
+          <label>{t('postalCode')}</label>
           <input value={form.postal} onChange={(e) => setForm({ ...form, postal: e.target.value })} />
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600 }}>
@@ -79,29 +140,29 @@ export function AddressInfoScreen({ building, coords, onBack, onNext }) {
             onChange={(e) => setForm({ ...form, physicalExists: e.target.checked })}
             style={{ accentColor: 'var(--primary-mid)', width: 18, height: 18 }}
           />
-          A physical address exists
+          {t('physicalExists')}
         </label>
         <div className="field">
-          <label>Physical address</label>
+          <label>{t('physicalAddress')}</label>
           <textarea value={form.physical} onChange={(e) => setForm({ ...form, physical: e.target.value })} />
         </div>
         <div className="field">
-          <label>Address name / identifier</label>
+          <label>{t('addressName')}</label>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </div>
         <div className="field">
-          <label>GPS coordinates</label>
+          <label>{t('gpsCoordinates')}</label>
           <input value={form.gps} onChange={(e) => setForm({ ...form, gps: e.target.value })} />
         </div>
         <button type="button" className="btn btn-secondary btn-block">
-          Check / correct on map
+          {t('checkOnMap')}
         </button>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
           <button type="button" className="btn btn-secondary" onClick={onBack}>
-            Back
+            {t('back')}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => onNext({ building, ...form })}>
-            Next
+            {t('next')}
           </button>
         </div>
       </div>
@@ -110,11 +171,12 @@ export function AddressInfoScreen({ building, coords, onBack, onNext }) {
 }
 
 export function PhotoScreen({ onBack, onReview }) {
+  const { t } = useLanguage();
   const [hasPhoto, setHasPhoto] = useState(true);
 
   return (
     <div className="screen-body" style={{ overflow: 'auto', background: 'var(--bg)' }}>
-      <ScreenHeader title="Photo" subtitle="Step 3 of 3" />
+      <ScreenHeader title={t('photo')} subtitle={t('stepOf', { n: 3 })} />
       <Stepper step={3} />
       <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {hasPhoto ? (
@@ -139,7 +201,7 @@ export function PhotoScreen({ onBack, onReview }) {
                 borderRadius: 8,
               }}
             >
-              ADDRESS PHOTO
+              {t('addressPhoto')}
             </span>
           </div>
         ) : (
@@ -153,19 +215,19 @@ export function PhotoScreen({ onBack, onReview }) {
               color: 'var(--muted)',
             }}
           >
-            No photo
+            {t('noPhoto')}
           </div>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <button type="button" className="btn btn-secondary" onClick={() => setHasPhoto(true)}>
-            Retake
+            {t('retake')}
           </button>
           <button type="button" className="btn btn-danger-soft" onClick={() => setHasPhoto(false)}>
-            Remove
+            {t('remove')}
           </button>
         </div>
         <div>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Additional photo</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('additionalPhoto')}</div>
           <button
             type="button"
             style={{
@@ -183,16 +245,16 @@ export function PhotoScreen({ onBack, onReview }) {
             }}
           >
             <span style={{ fontSize: 28, color: 'var(--primary-mid)', fontWeight: 700 }}>+</span>
-            <span style={{ fontWeight: 600 }}>Open camera</span>
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>(Optional)</span>
+            <span style={{ fontWeight: 600 }}>{t('openCamera')}</span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t('optional')}</span>
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
           <button type="button" className="btn btn-secondary" onClick={onBack}>
-            Back
+            {t('back')}
           </button>
           <button type="button" className="btn btn-primary" onClick={onReview}>
-            Review
+            {t('review')}
           </button>
         </div>
       </div>
@@ -209,7 +271,9 @@ function SelectField({ label, required, value, onChange, options }) {
       </label>
       <select value={value} onChange={onChange}>
         {options.map((o) => (
-          <option key={o}>{o}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
     </div>

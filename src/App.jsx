@@ -9,8 +9,10 @@ import {
   PhotoScreen,
 } from './screens/AddressFlowScreens';
 import { RecordsScreen, ProfileScreen, TasksScreen, FormScreen } from './screens/OtherScreens';
+import { useLanguage } from './i18n/LanguageContext';
 
 export default function App() {
+  const { t } = useLanguage();
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState('map');
   const [flow, setFlow] = useState(null);
@@ -47,7 +49,7 @@ export default function App() {
   const finishReview = () => {
     setFlow(null);
     setTab('records');
-    showToast('Address record saved locally');
+    showToast(t('addressSaved'));
   };
 
   let content = null;
@@ -81,7 +83,7 @@ export default function App() {
         onClose={() => setFlow(null)}
         onContinue={() => {
           setFlow(null);
-          showToast('Form saved');
+          showToast(t('formSaved'));
         }}
       />
     );
