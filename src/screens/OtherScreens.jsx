@@ -215,9 +215,6 @@ export function TasksScreen() {
       <div style={{ padding: '12px 14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="toolbar-row">
           <input className="toolbar-input" placeholder={t('searchWorkforces')} />
-          <button type="button" className="btn btn-primary toolbar-action">
-            {t('newTask')}
-          </button>
         </div>
         {tab === 'available' ? (
           taskList.length === 0 ? (
