@@ -116,7 +116,6 @@ export function AddressInfoScreen({ building, coords, onBack, onNext }) {
     postal: 'NO31-A42',
     physicalExists: true,
     physical: t('physicalDefault'),
-    name: t('buildingNameDefault'),
     gps: `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
   });
 
@@ -145,10 +144,6 @@ export function AddressInfoScreen({ building, coords, onBack, onNext }) {
         <div className="field">
           <label>{t('physicalAddress')}</label>
           <textarea value={form.physical} onChange={(e) => setForm({ ...form, physical: e.target.value })} />
-        </div>
-        <div className="field">
-          <label>{t('addressName')}</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </div>
         <div className="field">
           <label>{t('gpsCoordinates')}</label>
