@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { LanguageSelect } from '../components/LanguageSelect';
 
-export default function LoginScreen({ onLogin }) {
+export default function LoginScreen({ onLogin, onDetect }) {
   const { t } = useLanguage();
   const [username, setUsername] = useState('field.user');
   const [password, setPassword] = useState('••••••••');
@@ -64,7 +64,7 @@ export default function LoginScreen({ onLogin }) {
           <button type="button" className="btn btn-primary btn-block" onClick={onLogin}>
             {t('signIn')}
           </button>
-          <button type="button" className="login-detection-btn" tabIndex={-1} aria-disabled="true">
+          <button type="button" className="login-detection-btn" onClick={onDetect}>
             <svg className="login-detection-btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M7 3.5h7.2L19 8.3V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1-1.5Z"

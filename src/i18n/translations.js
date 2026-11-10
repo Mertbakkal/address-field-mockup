@@ -1,3 +1,5 @@
+import { citizenAr, citizenEn, citizenFr } from './citizenStrings';
+
 export const translations = {
   en: {
     // Login
@@ -174,6 +176,7 @@ export const translations = {
     optional: '(Optional)',
     review: 'Review',
     addressSaved: 'Address record saved locally',
+    ...citizenEn,
   },
 
   fr: {
@@ -341,12 +344,16 @@ export const translations = {
     optional: '(Facultatif)',
     review: 'Réviser',
     addressSaved: 'Dossier d’adresse enregistré localement',
+    ...citizenFr,
+  },
+  ar: {
+    ...citizenAr,
   },
 };
 
-/** Active UI locale: Arabic stays selectable but has no dictionary. */
+/** Field copy has no Arabic dictionary; missing Arabic keys fall back to English. */
 export function resolveLocale(lang) {
-  if (lang === 'fr') return 'fr';
+  if (lang === 'fr' || lang === 'ar') return lang;
   return 'en';
 }
 

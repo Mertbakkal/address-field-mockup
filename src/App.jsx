@@ -10,10 +10,12 @@ import {
 } from './screens/AddressFlowScreens';
 import { RecordsScreen, ProfileScreen, TasksScreen, FormScreen } from './screens/OtherScreens';
 import { useLanguage } from './i18n/LanguageContext';
+import CitizenPortal from './citizen/CitizenPortal';
 
 export default function App() {
   const { t } = useLanguage();
   const [authed, setAuthed] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   const [tab, setTab] = useState('map');
   const [flow, setFlow] = useState(null);
   const [coords, setCoords] = useState([18.086, -15.9785]);
@@ -53,8 +55,10 @@ export default function App() {
   };
 
   let content = null;
-  if (!authed) {
-    content = <LoginScreen onLogin={() => setAuthed(true)} />;
+  if (portalOpen) {
+    content = <CitizenPortal onExit={() => setPortalOpen(false)} />;
+  } else if (!authed) {
+    content = <LoginScreen onLogin={() => setAuthed(true)} onDetect={() => setPortalOpen(true)} />;
   } else if (flow === 'building') {
     content = (
       <BuildingInfoScreen
@@ -119,7 +123,7 @@ export default function App() {
     <PhoneFrame>
       <StatusBar />
       {content}
-      {authed && <BottomNav active={navActive} onChange={goTab} />}
+      {authed && !portalOpen && <BottomNav active={navActive} onChange={goTab} />}
       {toast && (
         <div
           style={{

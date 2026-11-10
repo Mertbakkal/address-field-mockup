@@ -69,10 +69,11 @@ export function ScreenHeader({ title, subtitle, onDot }) {
   );
 }
 
-export function Stepper({ step }) {
+export function Stepper({ step, total = 3 }) {
+  const steps = Array.from({ length: total }, (_, i) => i + 1);
   return (
     <div className="stepper">
-      {[1, 2, 3].map((n, i) => (
+      {steps.map((n, i) => (
         <div key={n} style={{ display: 'contents' }}>
           {i > 0 && <div className={`step-line ${step > i ? 'done' : ''}`} />}
           <div className={`step-node ${step >= n ? (step === n ? 'active' : 'done') : ''}`}>{n}</div>
