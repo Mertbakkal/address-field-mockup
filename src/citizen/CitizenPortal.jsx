@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
   archiveApplication,
@@ -23,21 +23,12 @@ import {
 } from '../screens/citizen/CitizenScreens';
 
 export default function CitizenPortal({ onExit }) {
-  const { lang, setLang, t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [state, setState] = useState(loadState);
   const [screen, setScreen] = useState('otp');
   const [draft, setDraft] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [toast, setToast] = useState('');
-  const previousLang = useRef(lang);
-  const setLangRef = useRef(setLang);
-  setLangRef.current = setLang;
-
-  useEffect(() => {
-    const prev = previousLang.current;
-    setLangRef.current('fr');
-    return () => setLangRef.current(prev);
-  }, []);
 
   useEffect(() => {
     saveState(state);
