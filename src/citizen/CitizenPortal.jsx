@@ -13,7 +13,6 @@ import {
 import { ApplicationWizard } from '../screens/citizen/ApplicationWizard';
 import {
   CitizenHome,
-  CitizenLoginScreen,
   CitizenNav,
   CitizenProfile,
   NotificationInbox,
@@ -109,12 +108,10 @@ export default function CitizenPortal({ onExit }) {
               email: email || current.profile.email,
             },
           }));
-          setScreen('login');
+          setScreen('perms');
         }}
       />
     );
-  } else if (screen === 'login') {
-    body = <CitizenLoginScreen onBack={() => setScreen('otp')} onSuccess={() => setScreen('perms')} />;
   } else if (screen === 'perms') {
     body = (
       <PermissionsScreen

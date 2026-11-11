@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import {
-  DEMO_EMAIL,
-  DEMO_NIU,
   DEMO_OTP,
-  DEMO_PASSWORD,
   EXPIRED_OTP,
   STATUS_KEY,
   buildInbox,
@@ -151,57 +148,6 @@ export function OtpScreen({ profile, onVerified, onExit }) {
         <button type="button" className="btn btn-primary btn-block" onClick={check}>
           {t('otpContinue')}
         </button>
-      </div>
-    </Screen>
-  );
-}
-
-export function CitizenLoginScreen({ onSuccess, onBack }) {
-  const { t } = useLanguage();
-  const [niu, setNiu] = useState(DEMO_NIU);
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
-  const [error, setError] = useState('');
-
-  const withNiu = () => {
-    if (niu.trim() === DEMO_NIU) onSuccess({ method: 'niu', niu: niu.trim() });
-    else setError(t('loginError'));
-  };
-
-  const withEmail = () => {
-    if (email.trim().toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      onSuccess({ method: 'email', email: email.trim() });
-    } else setError(t('loginError'));
-  };
-
-  return (
-    <Screen title={t('citizenLoginTitle')} onBack={onBack}>
-      <div className="citizen-stack">
-        <div className="field">
-          <label>{t('niu')}</label>
-          <input value={niu} onChange={(e) => setNiu(e.target.value)} />
-          <p className="hint">{t('niuHint')}</p>
-        </div>
-        <button type="button" className="btn btn-primary btn-block" onClick={withNiu}>
-          {t('citizenSignIn')}
-        </button>
-        <p className="hint">{t('demoNiu')}</p>
-        <div className="or-split">
-          <span>{t('citizenOr')}</span>
-        </div>
-        <div className="field">
-          <label>{t('emailShort')}</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>{t('password')}</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <button type="button" className="btn btn-primary btn-block" onClick={withEmail}>
-          {t('emailPassword')}
-        </button>
-        <p className="hint">{t('demoAccount')}</p>
-        {error ? <p className="form-error">{error}</p> : null}
       </div>
     </Screen>
   );
