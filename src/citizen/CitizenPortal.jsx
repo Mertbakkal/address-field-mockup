@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
+  alertCount,
   archiveApplication,
   downloadCertificate,
   emptyDraft,
@@ -15,6 +16,7 @@ import {
   CitizenLoginScreen,
   CitizenNav,
   CitizenProfile,
+  NotificationInbox,
   OtpScreen,
   PermissionsScreen,
   TrackingDetail,
@@ -28,6 +30,8 @@ export default function CitizenPortal({ onExit }) {
   const [screen, setScreen] = useState('otp');
   const [draft, setDraft] = useState(null);
   const [openId, setOpenId] = useState(null);
+  const [returnTo, setReturnTo] = useState('tracking');
+  const [inboxFrom, setInboxFrom] = useState('home');
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -75,12 +79,19 @@ export default function CitizenPortal({ onExit }) {
     setScreen('wizard');
   };
 
-  const openApp = (item) => {
+  const openApp = (item, from = 'tracking') => {
     setOpenId(item.id);
+    setReturnTo(from);
     setScreen('detail');
   };
 
+  const openInbox = () => {
+    setInboxFrom(screen);
+    setScreen('inbox');
+  };
+
   const opened = state.applications.find((item) => item.id === openId) || null;
+  const alerts = alertCount(state.applications);
   const showNav = screen === 'home' || screen === 'tracking' || screen === 'profile';
 
   let body = null;
@@ -121,6 +132,8 @@ export default function CitizenPortal({ onExit }) {
         onNew={() => openDraft(emptyDraft(state.profile))}
         onOpenDraft={openDraft}
         onOpenApp={openApp}
+        onNotify={openInbox}
+        alertCount={alerts}
       />
     );
   } else if (screen === 'wizard' && draft) {
@@ -129,7 +142,6 @@ export default function CitizenPortal({ onExit }) {
         draft={draft}
         onChange={setDraft}
         onClose={() => setScreen('home')}
-        onLocate={askLocation}
         onSaveDraft={() => {
           setState(upsertDraft(state, draft));
           showToast(t('draftSaved'));
@@ -139,6 +151,7 @@ export default function CitizenPortal({ onExit }) {
           const result = submitDraft(state, draft);
           setState(result.state);
           setOpenId(result.submitted.id);
+          setReturnTo('home');
           showToast(t('submittedToast', { ref: result.submitted.fileNumber }));
           setScreen('detail');
         }}
@@ -150,15 +163,26 @@ export default function CitizenPortal({ onExit }) {
         applications={state.applications}
         onOpen={openApp}
         onArchive={(id) => setState((current) => archiveApplication(current, id))}
+        onNotify={openInbox}
+        alertCount={alerts}
       />
     );
   } else if (screen === 'detail' && opened) {
     body = (
       <TrackingDetail
         app={opened}
-        onBack={() => setScreen('tracking')}
+        onBack={() => setScreen(returnTo)}
         onDownload={() => downloadCertificate(opened)}
         onVerify={() => setScreen('verify')}
+      />
+    );
+  } else if (screen === 'inbox') {
+    body = (
+      <NotificationInbox
+        applications={state.applications}
+        onBack={() => setScreen(inboxFrom)}
+        onOpen={(item) => openApp(item, 'inbox')}
+        onDownload={downloadCertificate}
       />
     );
   } else if (screen === 'verify' && opened) {
@@ -168,6 +192,8 @@ export default function CitizenPortal({ onExit }) {
       <CitizenProfile
         profile={state.profile}
         onExit={onExit}
+        onNotify={openInbox}
+        alertCount={alerts}
         onSave={(profile) => {
           setState((current) => ({ ...current, profile }));
           showToast(t('profileSaved'));

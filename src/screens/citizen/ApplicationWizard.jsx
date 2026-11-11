@@ -2,51 +2,61 @@ import { useRef, useState } from 'react';
 import { Stepper } from '../../components/chrome';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-const STEP_KEYS = ['stepPersonal', 'stepPosition', 'stepBuilding', 'stepExtra', 'stepSummary'];
+const DISTRICTS = ['Tevragh Zeina', 'Ksar', 'Dar Naim', 'Teyaret'];
+const APP_TYPES = [
+  ['new', 'webTypeNew'],
+  ['correction', 'webTypeCorrection'],
+  ['official', 'webTypeOfficial'],
+];
+const APP_FORMS = [
+  ['individual', 'webFormIndividual'],
+  ['corporate', 'webFormCorporate'],
+  ['proxy', 'webFormProxy'],
+];
+const STEP_KEYS = ['webStepPrivacy', 'webStepType', 'webStepPerson', 'webStepDocs'];
 
-function show(value, empty) {
-  return value ? value : empty;
+function viewOf(draft) {
+  if (draft.phase === 'wizard' || draft.phase === 'form') {
+    const step = Math.min(Math.max(draft.step || 1, 1), 4);
+    return { phase: 'wizard', step };
+  }
+  return { phase: 'intro', step: 1 };
 }
 
-export function ApplicationWizard({ draft, onChange, onSaveDraft, onSubmit, onClose, onLocate }) {
+function acceptFile(file, extraDoc) {
+  if (!file) return false;
+  const doc = extraDoc && /\.docx?$/i.test(file.name);
+  return file.type.startsWith('image/') || file.type === 'application/pdf' || /\.(png|jpe?g|pdf)$/i.test(file.name) || doc;
+}
+
+export function ApplicationWizard({ draft, onChange, onSaveDraft, onSubmit, onClose }) {
   const { t } = useLanguage();
-  const [billError, setBillError] = useState('');
-  const photoRef = useRef(null);
-  const billRef = useRef(null);
-  const phase = draft.phase || 'type';
-  const step = draft.step || 1;
-  const located = Boolean(draft.coords);
+  const [fileError, setFileError] = useState('');
+  const addressRef = useRef(null);
+  const proxyRef = useRef(null);
+  const idRef = useRef(null);
+  const { phase, step } = viewOf(draft);
 
   const patch = (partial) => onChange({ ...draft, ...partial });
 
-  const onBill = (file) => {
+  const pickFile = (key, extraDoc) => (event) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-    const ok = file.type.startsWith('image/') || file.type === 'application/pdf' || /\.(png|jpe?g|webp|gif|pdf)$/i.test(file.name);
-    if (!ok) {
-      setBillError(t('billError'));
+    if (!acceptFile(file, extraDoc)) {
+      setFileError(t('billError'));
       return;
     }
-    setBillError('');
-    patch({ billName: file.name });
+    setFileError('');
+    patch({ [key]: file.name });
   };
 
   const back = () => {
-    if (phase === 'form' && step > 1) patch({ step: step - 1 });
-    else if (phase === 'form' && draft.type === 'certificate') patch({ phase: 'bill' });
-    else if (phase === 'form') patch({ phase: 'eligibility' });
-    else if (phase === 'bill') patch({ phase: 'eligibility' });
-    else if (phase === 'eligibility') patch({ phase: 'type' });
+    if (phase === 'wizard' && step > 1) patch({ phase: 'wizard', step: step - 1 });
+    else if (phase === 'wizard') patch({ phase: 'intro', step: 1 });
     else onClose();
   };
 
-  const title =
-    phase === 'type'
-      ? t('appTypeTitle')
-      : phase === 'eligibility'
-        ? t('eligibilityTitle')
-        : phase === 'bill'
-          ? t('billTitle')
-          : t(STEP_KEYS[step - 1]);
+  const title = phase === 'intro' ? t('webIntroTitle') : t(STEP_KEYS[step - 1]);
 
   return (
     <div className="screen-body">
@@ -58,244 +68,196 @@ export function ApplicationWizard({ draft, onChange, onSaveDraft, onSubmit, onCl
           {t('back')}
         </button>
       </header>
-      {phase === 'form' ? <Stepper step={step} total={5} /> : null}
+      {phase === 'wizard' ? <Stepper step={step} total={4} /> : null}
       <div className="citizen-scroll">
-        {phase === 'type' ? (
+        {phase === 'intro' ? (
           <div className="citizen-stack">
-            <button type="button" className="btn btn-primary btn-block" onClick={() => patch({ type: 'address', phase: 'eligibility' })}>
-              {t('typeAddress')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-block"
-              onClick={() => patch({ type: 'certificate', phase: 'eligibility' })}
-            >
-              {t('typeCertificate')}
-            </button>
-          </div>
-        ) : null}
-
-        {phase === 'eligibility' ? (
-          <div className="citizen-stack">
+            <p className="hint">{t('webIntroLead')}</p>
             <ul className="elig-list">
-              <li>{t('eligOwner')}</li>
-              <li>{t('eligCommune')}</li>
-              <li>{t('eligMobile')}</li>
-              <li>{t('eligPhoto')}</li>
+              <li>{t('webDocAddress')}</li>
+              <li>{t('webDocProxy')}</li>
+              <li>{t('webDocId')}</li>
             </ul>
             <label className="check-line">
               <input
                 type="checkbox"
-                checked={Boolean(draft.eligibilityAccepted)}
-                onChange={(e) => patch({ eligibilityAccepted: e.target.checked })}
+                checked={Boolean(draft.introOk)}
+                onChange={(e) => patch({ introOk: e.target.checked })}
               />
-              {t('eligAccept')}
+              {t('webIntroAccept')}
             </label>
             <button
               type="button"
               className="btn btn-primary btn-block"
-              disabled={!draft.eligibilityAccepted}
-              onClick={() => patch({ phase: draft.type === 'certificate' ? 'bill' : 'form', step: 1 })}
+              disabled={!draft.introOk}
+              onClick={() => patch({ phase: 'wizard', step: 1 })}
             >
-              {t('eligContinue')}
+              {t('webContinue')}
             </button>
           </div>
         ) : null}
 
-        {phase === 'bill' ? (
+        {phase === 'wizard' && step === 1 ? (
           <div className="citizen-stack">
-            <div className="channel-row">
-              <button
-                type="button"
-                className={`channel-btn ${draft.billKind === 'water' ? 'on' : ''}`}
-                onClick={() => patch({ billKind: 'water' })}
-              >
-                {t('billWater')}
-              </button>
-              <button
-                type="button"
-                className={`channel-btn ${draft.billKind === 'electricity' ? 'on' : ''}`}
-                onClick={() => patch({ billKind: 'electricity' })}
-              >
-                {t('billElectricity')}
-              </button>
+            <div className="card">
+              <strong>{t('webRequiredDocs')}</strong>
+              <ul className="elig-list">
+                <li>{t('webPrivacyUse1')}</li>
+                <li>{t('webPrivacyUse2')}</li>
+                <li>{t('webPrivacyUse3')}</li>
+              </ul>
             </div>
-            <input
-              ref={billRef}
-              type="file"
-              accept="image/*,application/pdf"
-              hidden
-              onChange={(e) => onBill(e.target.files?.[0])}
-            />
-            <button type="button" className="btn btn-secondary btn-block" onClick={() => billRef.current?.click()}>
-              {t('billUpload')}
-            </button>
-            {draft.billName ? <p className="hint">{t('billReady', { name: draft.billName })}</p> : null}
-            {billError ? <p className="form-error">{billError}</p> : null}
-            <button
-              type="button"
-              className="btn btn-primary btn-block"
-              disabled={!draft.billName}
-              onClick={() => patch({ phase: 'form', step: 1 })}
-            >
-              {t('next')}
-            </button>
+            <label className="check-line">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.privacyOk)}
+                onChange={(e) => patch({ privacyOk: e.target.checked })}
+              />
+              {t('webPrivacyAccept')}
+            </label>
           </div>
         ) : null}
 
-        {phase === 'form' && step === 1 ? (
+        {phase === 'wizard' && step === 2 ? (
           <div className="citizen-stack">
-            <Field label={t('firstName')} value={draft.firstName} onChange={(v) => patch({ firstName: v })} />
-            <Field label={t('lastName')} value={draft.lastName} onChange={(v) => patch({ lastName: v })} />
-            <Field label={t('phoneShort')} value={draft.phone} onChange={(v) => patch({ phone: v })} />
-            <Field label={t('emailShort')} value={draft.email} onChange={(v) => patch({ email: v })} />
-            <Field label={t('niu')} value={draft.niu} onChange={(v) => patch({ niu: v })} />
-            <Field label={t('digitalId')} value={draft.digitalId} onChange={(v) => patch({ digitalId: v })} />
+            <div className="field">
+              <label>{t('webDistrict')}</label>
+              <select value={draft.district || ''} onChange={(e) => patch({ district: e.target.value, commune: e.target.value })}>
+                <option value="">{t('webSelectDistrict')}</option>
+                {DISTRICTS.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>{t('webAppType')}</label>
+              <select value={draft.appType || ''} onChange={(e) => patch({ appType: e.target.value })}>
+                <option value="">{t('webSelectAppType')}</option>
+                {APP_TYPES.map(([id, key]) => (
+                  <option key={id} value={id}>{t(key)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>{t('webAppForm')}</label>
+              <select value={draft.appForm || ''} onChange={(e) => patch({ appForm: e.target.value })}>
+                <option value="">{t('webSelectAppForm')}</option>
+                {APP_FORMS.map(([id, key]) => (
+                  <option key={id} value={id}>{t(key)}</option>
+                ))}
+              </select>
+            </div>
           </div>
         ) : null}
 
-        {phase === 'form' && step === 2 ? (
+        {phase === 'wizard' && step === 3 ? (
           <div className="citizen-stack">
+            <div className="field">
+              <label>{t('webId')}</label>
+              <input value={draft.idValue || ''} onChange={(e) => patch({ idValue: e.target.value })} />
+            </div>
+            <div className="field">
+              <label>{t('webBirthDate')}</label>
+              <input type="date" value={draft.birthDate || ''} onChange={(e) => patch({ birthDate: e.target.value })} />
+            </div>
             <button
               type="button"
               className="btn btn-secondary btn-block"
-              onClick={() => onLocate((coords) => patch({ coords }))}
+              onClick={() => patch({ fullName: 'Mohamed Fall', firstName: 'Mohamed', lastName: 'Fall' })}
             >
-              {t('locateMe')}
+              {t('webVerifyPerson')}
             </button>
-            {located ? (
-              <p className="hint">
-                {t('locationOk')}: {draft.coords.lat.toFixed(5)}, {draft.coords.lng.toFixed(5)}
-              </p>
-            ) : (
-              <p className="form-error">{t('locationMissing')}</p>
-            )}
-          </div>
-        ) : null}
-
-        {phase === 'form' && step === 3 ? (
-          <div className="citizen-stack">
-            <Field label={t('doorNumber')} value={draft.door} onChange={(v) => patch({ door: v })} />
-            <Field label={t('roadName')} value={draft.road} onChange={(v) => patch({ road: v })} />
-            <Field label={t('commune')} value={draft.commune} onChange={(v) => patch({ commune: v })} />
             <div className="field">
-              <label>{t('doorPhoto')}</label>
+              <label>{t('webFullName')}</label>
               <input
-                ref={photoRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                hidden
-                disabled={!located}
+                value={draft.fullName || ''}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) patch({ photoName: file.name });
+                  const fullName = e.target.value;
+                  const [firstName, ...rest] = fullName.trim().split(/\s+/);
+                  patch({ fullName, firstName: firstName || '', lastName: rest.join(' ') });
                 }}
               />
-              <button
-                type="button"
-                className="btn btn-secondary btn-block"
-                disabled={!located}
-                onClick={() => photoRef.current?.click()}
-              >
-                {t('takePhoto')}
-              </button>
-              {draft.photoName ? <p className="hint">{draft.photoName}</p> : null}
-              {!located ? <p className="form-error">{t('photoLocked')}</p> : null}
             </div>
             <div className="field">
-              <label>{t('plaque')}</label>
-              <div className="channel-row">
-                <button type="button" className={`channel-btn ${draft.plaque === 'yes' ? 'on' : ''}`} onClick={() => patch({ plaque: 'yes' })}>
-                  {t('plaqueYes')}
-                </button>
-                <button type="button" className={`channel-btn ${draft.plaque === 'no' ? 'on' : ''}`} onClick={() => patch({ plaque: 'no' })}>
-                  {t('plaqueNo')}
-                </button>
+              <label>{t('webPhone')}</label>
+              <div className="phone-row">
+                <span className="phone-prefix">+222</span>
+                <input
+                  value={draft.phoneLocal || ''}
+                  onChange={(e) => patch({ phoneLocal: e.target.value.replace(/\D/g, ''), phone: `+222${e.target.value.replace(/\D/g, '')}` })}
+                />
               </div>
             </div>
           </div>
         ) : null}
 
-        {phase === 'form' && step === 4 ? (
+        {phase === 'wizard' && step === 4 ? (
           <div className="citizen-stack">
-            <Field label={t('neighborhood')} value={draft.neighborhood} onChange={(v) => patch({ neighborhood: v })} />
-            <Field label={t('postal')} value={draft.postal} onChange={(v) => patch({ postal: v })} />
-            <Field label={t('cadastral')} value={draft.cadastral} onChange={(v) => patch({ cadastral: v })} />
-            <Field label={t('geocode')} value={draft.geocode} onChange={(v) => patch({ geocode: v })} />
-            <div className="field">
-              <label>{t('description')}</label>
-              <textarea value={draft.description} onChange={(e) => patch({ description: e.target.value })} />
-            </div>
-          </div>
-        ) : null}
-
-        {phase === 'form' && step === 5 ? (
-          <div className="citizen-stack">
-            <Summary label={t('appTypeTitle')} value={draft.type === 'certificate' ? t('typeCertificate') : t('typeAddress')} />
-            <Summary label={t('firstName')} value={show(`${draft.firstName} ${draft.lastName}`.trim(), t('summaryEmpty'))} />
-            <Summary label={t('niu')} value={show(draft.niu, t('summaryEmpty'))} />
-            <Summary label={t('digitalId')} value={show(draft.digitalId, t('summaryEmpty'))} />
-            <Summary
-              label={t('stepPosition')}
-              value={
-                located ? `${draft.coords.lat.toFixed(5)}, ${draft.coords.lng.toFixed(5)}` : t('summaryEmpty')
-              }
+            <UploadRow
+              label={t('webDocAddress')}
+              formats={t('webDocAddressFormats')}
+              name={draft.fileAddress}
+              inputRef={addressRef}
+              onPick={pickFile('fileAddress', false)}
+              uploadLabel={t('webUpload')}
             />
-            <Summary label={t('doorNumber')} value={show(draft.door, t('summaryEmpty'))} />
-            <Summary label={t('roadName')} value={show(draft.road, t('summaryEmpty'))} />
-            <Summary label={t('commune')} value={show(draft.commune, t('summaryEmpty'))} />
-            <Summary label={t('neighborhood')} value={show(draft.neighborhood, t('summaryEmpty'))} />
-            <Summary label={t('postal')} value={show(draft.postal, t('summaryEmpty'))} />
-            <Summary label={t('cadastral')} value={show(draft.cadastral, t('summaryEmpty'))} />
-            <Summary label={t('geocode')} value={show(draft.geocode, t('summaryEmpty'))} />
-            <Summary label={t('doorPhoto')} value={show(draft.photoName, t('summaryEmpty'))} />
-            <Summary
-              label={t('plaque')}
-              value={draft.plaque === 'yes' ? t('plaqueYes') : draft.plaque === 'no' ? t('plaqueNo') : t('summaryEmpty')}
+            <UploadRow
+              label={t('webDocProxy')}
+              optional={t('webOptional')}
+              formats={t('webDocProxyFormats')}
+              name={draft.fileProxy}
+              inputRef={proxyRef}
+              onPick={pickFile('fileProxy', true)}
+              uploadLabel={t('webUpload')}
             />
-            {draft.type === 'certificate' ? (
-              <Summary
-                label={t('billTitle')}
-                value={draft.billName ? `${draft.billKind === 'electricity' ? t('billElectricity') : t('billWater')} — ${draft.billName}` : t('summaryEmpty')}
-              />
-            ) : null}
-            <button type="button" className="btn btn-primary btn-block" onClick={onSubmit}>
-              {t('submitApp')}
-            </button>
+            <UploadRow
+              label={t('webDocId')}
+              formats={t('webDocIdFormats')}
+              name={draft.fileId}
+              inputRef={idRef}
+              onPick={pickFile('fileId', false)}
+              uploadLabel={t('webUpload')}
+            />
+            {fileError ? <p className="form-error">{fileError}</p> : null}
           </div>
         ) : null}
       </div>
-      {phase === 'form' ? (
+      {phase === 'wizard' ? (
         <div className="citizen-footer">
           <button type="button" className="btn btn-secondary" onClick={onSaveDraft}>
             {t('saveDraft')}
           </button>
-          {step < 5 ? (
-            <button type="button" className="btn btn-primary" onClick={() => patch({ step: step + 1 })}>
+          {step < 4 ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={step === 1 && !draft.privacyOk}
+              onClick={() => patch({ phase: 'wizard', step: step + 1 })}
+            >
               {t('next')}
             </button>
-          ) : null}
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={onSubmit}>
+              {t('webSendSms')}
+            </button>
+          )}
         </div>
       ) : null}
     </div>
   );
 }
 
-function Field({ label, value, onChange }) {
+function UploadRow({ label, optional, formats, name, inputRef, onPick, uploadLabel }) {
   return (
-    <div className="field">
-      <label>{label}</label>
-      <input value={value || ''} onChange={(e) => onChange(e.target.value)} />
-    </div>
-  );
-}
-
-function Summary({ label, value }) {
-  return (
-    <div className="card">
-      <span className="hint">{label}</span>
-      <strong>{value}</strong>
+    <div className="card citizen-stack">
+      <strong>{label}</strong>
+      {optional ? <span className="hint">{optional}</span> : null}
+      <input ref={inputRef} type="file" hidden onChange={onPick} />
+      <button type="button" className="btn btn-secondary btn-block" onClick={() => inputRef.current?.click()}>
+        {uploadLabel}
+      </button>
+      <span className="hint">{formats}</span>
+      {name ? <span className="hint">{name}</span> : null}
     </div>
   );
 }

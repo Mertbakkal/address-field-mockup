@@ -362,9 +362,17 @@ export function emptyDraft(profile) {
     previousAddressNumber: null,
     rejectionReason: null,
     notifications: [],
-    phase: 'type',
+    phase: 'intro',
     step: 1,
-    eligibilityAccepted: false,
+    introOk: false,
+    privacyOk: false,
+    district: '',
+    appType: '',
+    appForm: '',
+    idValue: '',
+    birthDate: '',
+    fullName: '',
+    phoneLocal: String(profile.phone || '').replace(/^\+222/, ''),
   };
 }
 
@@ -377,23 +385,41 @@ function nextFileNumber(applications) {
   return `AD-2026-${n + 1}`;
 }
 
+const TYPE_FR = {
+  new: 'Nouvelle détection d’adresse',
+  correction: 'Correction d’adresse',
+  official: 'Détection pour document officiel',
+};
+const TYPE_AR = {
+  new: 'كشف عنوان جديد',
+  correction: 'تصحيح العنوان',
+  official: 'كشف لوثيقة رسمية',
+};
+
 function labelsFor(draft) {
   const typed = (draft.description || '').trim();
-  const place = [draft.commune, draft.door].filter(Boolean).join(', ');
-  const generated = draft.type === 'certificate'
-    ? (place ? `Certificat — ${place}` : 'Certificat d’adresse')
-    : (place ? `Adresse — ${place}` : 'Demande d’adresse');
-  const generatedAr = draft.type === 'certificate'
-    ? (place ? `شهادة عنوان — ${place}` : 'شهادة عنوان')
-    : (place ? `عنوان — ${place}` : 'طلب عنوان');
+  const name = (draft.fullName || `${draft.firstName || ''} ${draft.lastName || ''}`).trim();
+  const district = draft.district || draft.commune || '';
+  const generated = [district, TYPE_FR[draft.appType], name].filter(Boolean).join(' — ');
+  const generatedAr = [district, TYPE_AR[draft.appType], name].filter(Boolean).join(' — ');
+  if (draft.appType || draft.district || draft.fullName) {
+    return { description: generated, descriptionAr: generatedAr };
+  }
   return {
-    description: typed || generated,
-    descriptionAr: typed ? `${generatedAr} ${typed}` : generatedAr,
+    description: typed,
+    descriptionAr: draft.descriptionAr || '',
   };
 }
 
 export function upsertDraft(state, draft) {
-  const next = { ...draft, draft: true, fileNumber: null, status: null };
+  const next = {
+    ...draft,
+    ...labelsFor(draft),
+    commune: draft.district || draft.commune,
+    draft: true,
+    fileNumber: null,
+    status: null,
+  };
   const exists = state.applications.some((item) => item.id === next.id);
   const applications = exists
     ? state.applications.map((item) => (item.id === next.id ? next : item))
@@ -413,8 +439,9 @@ export function submitDraft(state, draft) {
     status: 'received',
     archived: false,
     createdAt: now,
-    phase: 'form',
-    step: 5,
+    phase: 'wizard',
+    step: 4,
+    commune: draft.district || draft.commune,
     notifications: [{ id: uid(), kind: 'submission', at: now }],
   };
   const exists = state.applications.some((item) => item.id === submitted.id);
@@ -446,48 +473,132 @@ export function matchesFilter(app, filter) {
   return true;
 }
 
+export function buildInbox(applications) {
+  const highlights = [];
+  const rest = [];
+  for (const app of applications) {
+    if (app.draft) continue;
+    let sawPdf = false;
+    for (const item of app.notifications || []) {
+      if (item.kind === 'approval') highlights.push({ id: item.id, kind: 'approval', app, note: item });
+      else if (item.kind === 'status' && item.status === 'certificateAvailable') {
+        sawPdf = true;
+        highlights.push({ id: item.id, kind: 'pdf', app, note: item });
+      } else rest.push({ id: item.id, kind: item.kind, app, note: item });
+    }
+    if (app.status === 'certificateAvailable' && !sawPdf) {
+      const note = { id: `${app.id}-pdf`, kind: 'status', at: app.createdAt, status: 'certificateAvailable' };
+      highlights.push({ id: note.id, kind: 'pdf', app, note });
+    }
+  }
+  const rank = { approval: 0, pdf: 1 };
+  highlights.sort((a, b) => rank[a.kind] - rank[b.kind]);
+  rest.sort((a, b) => String(b.note.at).localeCompare(String(a.note.at)));
+  return { highlights, rest };
+}
+
+export function alertCount(applications) {
+  return buildInbox(applications).highlights.length;
+}
+
 function pdfText(text) {
   let out = '';
-  for (const ch of text) {
+  for (const ch of String(text ?? '')) {
+    if (ch === '\\' || ch === '(' || ch === ')') {
+      out += `\\${ch}`;
+      continue;
+    }
     const code = ch.codePointAt(0);
-    if (ch === '\\' || ch === '(' || ch === ')') out += `\\${ch}`;
-    else if (code > 126) out += `\\${code.toString(8).padStart(3, '0')}`;
-    else if (code < 32) out += ' ';
-    else out += ch;
+    if (code >= 32 && code <= 126) out += ch;
+    else if (code >= 160 && code <= 255) out += `\\${code.toString(8).padStart(3, '0')}`;
+    else out += ' ';
   }
   return out;
 }
 
-export function downloadCertificate(app) {
-  const lines = [
-    "CERTIFICAT D'ADRESSE",
-    `Dossier: ${app.fileNumber}`,
-    `Identite numerique: ${app.digitalId || '-'}`,
-    `Demandeur: ${app.firstName} ${app.lastName}`.trim(),
-    `Numero de porte: ${app.door || '-'}`,
-    `Voie: ${app.road || '-'}`,
-    `Commune: ${app.commune || '-'}`,
-  ];
-  if (app.neighborhood) lines.push(`Quartier: ${app.neighborhood}`);
-  if (app.postal) lines.push(`Code postal: ${app.postal}`);
-  lines.push(`References cadastrales: ${app.cadastral || '-'}`);
-  if (app.geocode) lines.push(`Geocode: ${app.geocode}`);
-  if (app.addressNumber) lines.push(`Numero d'adresse: ${app.addressNumber}`);
-  lines.push(`QR: ${app.fileNumber}`);
+function pdfLine(font, size, x, y, color, text) {
+  const [r, g, b] = color;
+  return `BT\n/${font} ${size} Tf\n${r} ${g} ${b} rg\n1 0 0 1 ${x} ${y} Tm\n(${pdfText(text)}) Tj\nET\n`;
+}
 
-  let body = 'BT\n/F1 11 Tf\n50 800 Td\n';
-  lines.forEach((line, index) => {
-    if (index === 0) body += `/F1 16 Tf\n(${pdfText(line)}) Tj\n/F1 11 Tf\n0 -28 Td\n`;
-    else body += `(${pdfText(line)}) Tj\n0 -18 Td\n`;
+function qrBlock(value, x, y, size) {
+  const n = 21;
+  const cell = size / n;
+  let hash = 2166136261;
+  for (const ch of String(value)) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619);
+  let ops = `0.059 0.153 0.267 RG\n1.2 w\n${x} ${y} ${size} ${size} re S\n0 0 0 rg\n`;
+  const paint = (col, row) => {
+    const cx = (x + col * cell).toFixed(2);
+    const cy = (y + row * cell).toFixed(2);
+    const side = (cell * 0.86).toFixed(2);
+    ops += `${cx} ${cy} ${side} ${side} re f\n`;
+  };
+  const finder = (fx, fy) => {
+    for (let row = 0; row < 7; row += 1) {
+      for (let col = 0; col < 7; col += 1) {
+        const edge = row === 0 || col === 0 || row === 6 || col === 6 || (row >= 2 && row <= 4 && col >= 2 && col <= 4);
+        if (edge) paint(fx + col, fy + row);
+      }
+    }
+  };
+  finder(0, n - 7);
+  finder(n - 7, n - 7);
+  finder(0, 0);
+  for (let i = 0; i < n * n; i += 1) {
+    const col = i % n;
+    const row = Math.floor(i / n);
+    const inFinder = (col < 7 && row >= n - 7) || (col >= n - 7 && row >= n - 7) || (col < 7 && row < 7);
+    if (inFinder) continue;
+    if (((hash >>> (i % 24)) ^ (i * 17)) & 1) paint(col, row);
+  }
+  return ops;
+}
+
+function issuedOn(app) {
+  const note = (app.notifications || []).find((item) => item.status === 'certificateAvailable');
+  return note?.at || app.createdAt;
+}
+
+export function buildCertificatePdf(app) {
+  const issued = formatStamp(issuedOn(app), 'fr');
+  const rows = [
+    ['Dossier', app.fileNumber || '-'],
+    ['Demandeur', `${app.firstName || ''} ${app.lastName || ''}`.trim() || '-'],
+    ['NIU', app.niu || '-'],
+    ['Identité numérique', app.digitalId || '-'],
+    ['Numéro de porte', app.door || '-'],
+    ['Voie', app.road || '-'],
+    ['Commune', app.commune || '-'],
+    ['Quartier', app.neighborhood || '-'],
+    ['Code postal', app.postal || '-'],
+    ['Références cadastrales', app.cadastral || '-'],
+    ['Géocode', app.geocode || '-'],
+    ["Numéro d'adresse", app.addressNumber || '-'],
+    ["Date d'émission", `${issued.date} à ${issued.time}`],
+  ];
+  const ink = [0.059, 0.153, 0.267];
+  const muted = [0.42, 0.48, 0.55];
+  let body = '0.059 0.153 0.267 rg\n0 748 595 94 re f\n';
+  body += pdfLine('F2', 20, 40, 792, [1, 1, 1], "CERTIFICAT D'ADRESSE");
+  body += pdfLine('F1', 11, 40, 768, [0.78, 0.86, 0.93], 'Adressage numérique - Mauritanie');
+  rows.forEach((row, index) => {
+    const y = 688 - index * 34;
+    if (index === 11) body += `0.90 0.96 0.93 rg\n36 ${y - 8} 280 30 re f\n`;
+    body += pdfLine('F1', 9, 40, y + 14, muted, row[0]);
+    body += pdfLine('F2', 12, 40, y, ink, row[1]);
   });
-  body += 'ET';
+  body += qrBlock(app.fileNumber || 'AD', 420, 86, 126);
+  body += pdfLine('F1', 8, 420, 70, muted, app.fileNumber || '');
+  body += '0.82 0.86 0.90 RG\n0.6 w\n40 46 515 0 re S\n';
+  body += pdfLine('F1', 9, 40, 28, muted, `Certificat du dossier ${app.fileNumber || ''}.`);
 
   const objects = [
     '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n',
     '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n',
-    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n',
+    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >> endobj\n',
     `4 0 obj << /Length ${body.length} >> stream\n${body}\nendstream\nendobj\n`,
     '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n',
+    '6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >> endobj\n',
   ];
 
   let pdf = '%PDF-1.4\n';
@@ -503,7 +614,11 @@ export function downloadCertificate(app) {
     pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
   }
   pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return pdf;
+}
 
+export function downloadCertificate(app) {
+  const pdf = buildCertificatePdf(app);
   const blob = new Blob([pdf], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

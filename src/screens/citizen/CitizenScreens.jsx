@@ -7,13 +7,24 @@ import {
   DEMO_PASSWORD,
   EXPIRED_OTP,
   STATUS_KEY,
+  buildInbox,
   formatStamp,
   matchesFilter,
   matchesQuery,
 } from '../../citizen/portalStore';
 
-function Screen({ title, subtitle, onBack, children, footer }) {
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+function Screen({ title, subtitle, onBack, onNotify, alertCount = 0, children, footer }) {
   const { t } = useLanguage();
+  const actions = onNotify || onBack;
   return (
     <div className="screen-body">
       <header className="screen-header">
@@ -21,16 +32,40 @@ function Screen({ title, subtitle, onBack, children, footer }) {
           <h1>{title}</h1>
           {subtitle ? <p>{subtitle}</p> : null}
         </div>
-        {onBack ? (
-          <button type="button" className="btn btn-secondary" onClick={onBack}>
-            {t('back')}
-          </button>
+        {actions ? (
+          <div className="header-actions">
+            {onNotify ? (
+              <button type="button" className="bell-btn" onClick={onNotify} aria-label={t('notifBell')}>
+                <BellIcon />
+                {alertCount > 0 ? <span className="bell-badge">{alertCount}</span> : null}
+              </button>
+            ) : null}
+            {onBack ? (
+              <button type="button" className="btn btn-secondary" onClick={onBack}>
+                {t('back')}
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </header>
       <div className="citizen-scroll">{children}</div>
       {footer}
     </div>
   );
+}
+
+function noteText(t, app, note, lang) {
+  const received = formatStamp(app.createdAt, lang);
+  if (note.kind === 'submission') return t('notifSubmission', { ref: app.fileNumber });
+  if (note.kind === 'approval') {
+    const base = t('notifApproval', { ref: app.fileNumber, date: received.date, number: app.addressNumber || '—' });
+    if (!app.previousAddressNumber) return base;
+    return `${base} ${t('notifApprovalPrev', { prev: app.previousAddressNumber })}`;
+  }
+  if (note.kind === 'rejection') {
+    return t('notifRejection', { ref: app.fileNumber, reason: t(app.rejectionReason || 'reasonOutside') });
+  }
+  return t('notifStatus', { ref: app.fileNumber, status: t(STATUS_KEY[note.status] || note.status) });
 }
 
 export function OtpScreen({ profile, onVerified, onExit }) {
@@ -213,13 +248,13 @@ function StatusChip({ status }) {
   return <span className={`status-chip status-${status}`}>{t(STATUS_KEY[status] || status)}</span>;
 }
 
-export function CitizenHome({ applications, onNew, onOpenDraft, onOpenApp }) {
+export function CitizenHome({ applications, onNew, onOpenDraft, onOpenApp, onNotify, alertCount = 0 }) {
   const { t, lang } = useLanguage();
   const drafts = applications.filter((item) => item.draft);
   const submitted = applications.filter((item) => !item.draft && !item.archived);
 
   return (
-    <Screen title={t('citizenHome')}>
+    <Screen title={t('citizenHome')} onNotify={onNotify} alertCount={alertCount}>
       <div className="citizen-stack">
         <button type="button" className="btn btn-primary btn-block" onClick={onNew}>
           {t('citizenNew')}
@@ -248,13 +283,13 @@ export function CitizenHome({ applications, onNew, onOpenDraft, onOpenApp }) {
   );
 }
 
-export function CitizenProfile({ profile, onSave, onExit }) {
+export function CitizenProfile({ profile, onSave, onExit, onNotify, alertCount = 0 }) {
   const { t, lang, setLang } = useLanguage();
   const [form, setForm] = useState(profile);
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   return (
-    <Screen title={t('citizenProfile')}>
+    <Screen title={t('citizenProfile')} onNotify={onNotify} alertCount={alertCount}>
       <div className="citizen-stack">
         <h2 className="section-label">{t('editProfile')}</h2>
         <div className="field">
@@ -302,7 +337,7 @@ function Initiated({ at }) {
   return <span className="hint">{t('initiated', stamp)}</span>;
 }
 
-export function TrackingScreen({ applications, onOpen, onArchive }) {
+export function TrackingScreen({ applications, onOpen, onArchive, onNotify, alertCount = 0 }) {
   const { t, lang } = useLanguage();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -315,7 +350,7 @@ export function TrackingScreen({ applications, onOpen, onArchive }) {
   const list = applications.filter((item) => matchesFilter(item, filter) && matchesQuery(item, query));
 
   return (
-    <Screen title={t('trackTitle')}>
+    <Screen title={t('trackTitle')} onNotify={onNotify} alertCount={alertCount}>
       <div className="citizen-stack">
         <div className="field">
           <input
@@ -370,20 +405,6 @@ function QrMark({ value, onClick, label }) {
 export function TrackingDetail({ app, onBack, onDownload, onVerify }) {
   const { t, lang } = useLanguage();
   const [tab, setTab] = useState('notifications');
-  const received = formatStamp(app.createdAt, lang);
-
-  const textFor = (item) => {
-    if (item.kind === 'submission') return t('notifSubmission', { ref: app.fileNumber });
-    if (item.kind === 'approval') {
-      const base = t('notifApproval', { ref: app.fileNumber, date: received.date, number: app.addressNumber || '—' });
-      if (!app.previousAddressNumber) return base;
-      return `${base} ${t('notifApprovalPrev', { prev: app.previousAddressNumber })}`;
-    }
-    if (item.kind === 'rejection') {
-      return t('notifRejection', { ref: app.fileNumber, reason: t(app.rejectionReason || 'reasonOutside') });
-    }
-    return t('notifStatus', { ref: app.fileNumber, status: t(STATUS_KEY[item.status] || item.status) });
-  };
 
   return (
     <Screen title={app.fileNumber} subtitle={lang === 'ar' ? app.descriptionAr : app.description} onBack={onBack}>
@@ -406,7 +427,7 @@ export function TrackingDetail({ app, onBack, onDownload, onVerify }) {
         {tab === 'notifications'
           ? app.notifications.map((item) => (
               <p key={item.id} className="card">
-                {textFor(item)}
+                {noteText(t, app, item, lang)}
               </p>
             ))
           : null}
@@ -421,6 +442,43 @@ export function TrackingDetail({ app, onBack, onDownload, onVerify }) {
             </button>
           </div>
         ) : null}
+      </div>
+    </Screen>
+  );
+}
+
+export function NotificationInbox({ applications, onBack, onOpen, onDownload }) {
+  const { t, lang } = useLanguage();
+  const { highlights, rest } = buildInbox(applications);
+  const approval = highlights.filter((item) => item.kind === 'approval');
+  const ready = highlights.filter((item) => item.kind === 'pdf');
+
+  return (
+    <Screen title={t('inboxTitle')} onBack={onBack}>
+      <div className="citizen-stack">
+        {approval.map((item) => (
+          <button key={item.id} type="button" className="app-card" onClick={() => onOpen(item.app)}>
+            <strong>{t('approvalArrived')}</strong>
+            <span>{noteText(t, item.app, item.note, lang)}</span>
+          </button>
+        ))}
+        {ready.map((item) => (
+          <div key={item.id} className="app-card">
+            <strong>{t('pdfReadyTitle')}</strong>
+            <span>{t('pdfReadyBody', { ref: item.app.fileNumber })}</span>
+            <span>{item.app.addressNumber}</span>
+            <button type="button" className="btn btn-primary btn-block" onClick={() => onDownload(item.app)}>
+              {t('downloadCertificate')}
+            </button>
+          </div>
+        ))}
+        {rest.map((item) => (
+          <button key={item.id} type="button" className="app-card" onClick={() => onOpen(item.app)}>
+            <strong>{item.app.fileNumber}</strong>
+            <span>{noteText(t, item.app, item.note, lang)}</span>
+          </button>
+        ))}
+        {highlights.length + rest.length === 0 ? <p className="hint">{t('noNotifications')}</p> : null}
       </div>
     </Screen>
   );
